@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2026 활동지원사 송년행사 럭키드로우 | 경품 추첨 프로그램</title>
+  
+  <!-- Web Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Ambient & FX Canvases -->
+  <canvas id="bg-canvas"></canvas>
+  <canvas id="confetti-canvas"></canvas>
+  <div class="ambient-spotlight"></div>
+
+  <!-- Main Container -->
+  <div class="app-container">
+    
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="emblem-icon">✨</div>
+        <div class="title-wrap">
+          <h1>2026 활동지원사 송년행사 럭키드로우</h1>
+          <p>2026년 12월 4일(금) • 프리미엄 경품 추첨 시스템</p>
+        </div>
+      </div>
+
+      <!-- Realtime Header Stats -->
+      <div class="header-stats">
+        <div class="stat-item">
+          <span class="stat-label">전체 참가</span>
+          <span class="stat-val" id="header-total-count">70</span><span style="font-size:0.75rem; color:var(--text-muted)">명</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">추첨 가능</span>
+          <span class="stat-val" id="header-remaining-count" style="color:var(--gold-bright)">70</span><span style="font-size:0.75rem; color:var(--text-muted)">명</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">당첨 완료</span>
+          <span class="stat-val" id="header-drawn-count" style="color:var(--text-main)">0</span><span style="font-size:0.75rem; color:var(--text-muted)">명</span>
+        </div>
+      </div>
+
+      <!-- Header Action Buttons -->
+      <div class="header-actions">
+        <button id="btn-theme-toggle" class="btn-icon-gold" title="테마 변경 (디스코드 테마 / 클래식 골드)">
+          <span id="theme-icon">🎮</span> <span id="theme-text">디스코드 테마</span>
+        </button>
+        <button id="btn-mute-quick" class="btn-icon-gold active" title="사운드 빠른 켜기/끄기">
+          <span>🔊</span> 사운드
+        </button>
+        <button id="btn-sound-settings" class="btn-icon-gold" title="음향 상세 설정">
+          <span>⚙️</span> 사운드 설정
+        </button>
+        <button id="btn-fullscreen" class="btn-icon-gold" title="빔프로젝터 전체 화면 모드">
+          <span>⛶</span> 전체 화면
+        </button>
+        <button id="btn-reset-all" class="btn-icon-gold" style="border-color: rgba(230,57,70,0.4); color: #ff8585;" title="전체 초기화">
+          <span>🔄</span> 초기화
+        </button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="view-tabs">
+      <button class="tab-btn active" id="tab-btn-stage">
+        <span>🎬</span> 추첨 진행 무대
+      </button>
+      <button class="tab-btn" id="tab-btn-results">
+        <span>🏆</span> 전체 당첨 현황판
+      </button>
+      <button class="tab-btn" id="tab-btn-prizes">
+        <span>🎁</span> 경품 목록 관리
+      </button>
+    </nav>
+
+    <!-- Main View Switcher -->
+    <main class="main-view-container">
+
+      <!-- =================================================================
+           VIEW 1: 추첨 진행 무대 (STAGE)
+           ================================================================= -->
+      <section id="view-stage" class="tab-view active">
+        <div class="draw-stage-layout">
+          
+          <!-- Left Control Sidebar -->
+          <aside class="stage-sidebar">
+            
+            <!-- 1. Participant Range Setup -->
+            <div class="panel-card">
+              <div class="panel-title">
+                <span>참가 번호 자동 생성</span>
+                <small>범위 입력</small>
+              </div>
+              <div class="range-group">
+                <input type="number" id="input-start-num" class="input-num" value="1" min="1" max="9999" title="시작 번호" />
+                <span class="range-separator">~</span>
+                <input type="number" id="input-end-num" class="input-num" value="70" min="1" max="9999" title="종료 번호" />
+              </div>
+              <button id="btn-apply-range" class="btn-sm-gold">번호 생성 / 범위 적용</button>
+            </div>
+
+            <!-- 2. Draw Mode & Prize Selection -->
+            <div class="panel-card">
+              <div class="panel-title">추첨 방식 설정</div>
+              <div class="segmented-control">
+                <button id="btn-mode-prize" class="seg-btn active">
+                  <span>🎁</span> 경품별 개별
+                </button>
+                <button id="btn-mode-batch" class="seg-btn">
+                  <span>🎯</span> 전체 통합
+                </button>
+              </div>
+
+              <!-- Prize Select (Visible in Prize Mode) -->
+              <div id="prize-select-group" class="prize-select-box">
+                <label for="select-prize">진행할 경품 선택</label>
+                <select id="select-prize" class="select-gold"></select>
+              </div>
+
+              <!-- Batch Count Picker (1 ~ 10명) -->
+              <div class="batch-picker">
+                <label>
+                  <span>추첨 인원 수</span>
+                  <strong style="color:var(--gold-bright)">최대 10명</strong>
+                </label>
+                <div class="batch-btns">
+                  <button class="batch-num-btn active" data-count="1">1명</button>
+                  <button class="batch-num-btn" data-count="2">2명</button>
+                  <button class="batch-num-btn" data-count="3">3명</button>
+                  <button class="batch-num-btn" data-count="4">4명</button>
+                  <button class="batch-num-btn" data-count="5">5명</button>
+                  <button class="batch-num-btn" data-count="6">6명</button>
+                  <button class="batch-num-btn" data-count="7">7명</button>
+                  <button class="batch-num-btn" data-count="8">8명</button>
+                  <button class="batch-num-btn" data-count="9">9명</button>
+                  <button class="batch-num-btn" data-count="10">10명</button>
+                </div>
+              </div>
+
+              <!-- Animation Style Toggle -->
+              <div class="panel-title" style="margin-top: 10px; margin-bottom: 6px;">연출 애니메이션</div>
+              <div class="segmented-control" style="margin-bottom: 0;">
+                <button id="btn-style-slot" class="seg-btn active">
+                  <span>🎰</span> 슬롯머신
+                </button>
+                <button id="btn-style-derby" class="seg-btn">
+                  <span>🏇</span> 경마 레이스
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. Recent Winners Mini-List -->
+            <div class="panel-card recent-winners-panel">
+              <div class="panel-title">
+                <span>최근 당첨자</span>
+                <small>실시간 반영</small>
+              </div>
+              <div id="recent-winners-list" class="recent-list"></div>
+            </div>
+
+          </aside>
+
+          <!-- Center Stage Arena (Beam Projector Focus) -->
+          <div class="stage-arena">
+            
+            <!-- Top Prize Info Banner -->
+            <div class="stage-banner">
+              <div>
+                <span id="stage-prize-tag" class="current-prize-tag">🏆 경품 추첨</span>
+                <div id="stage-prize-title" class="current-prize-title">1등 - 최고급 무선청소기 (0/1명 완료)</div>
+              </div>
+              <div id="stage-remaining-badge" class="stage-badge-round">
+                추첨 가능: 70명 / 전체: 70명
+              </div>
+            </div>
+
+            <!-- Central Visual Animation Box -->
+            <div id="animation-stage-box" class="animation-stage-box">
+              <!-- Initial Idle State Rendered by JS -->
+            </div>
+
+            <!-- Bottom Controller Bar -->
+            <div class="stage-controller-bar">
+              <div class="controller-info">
+                <div class="draw-status-pill">
+                  <span class="pulse-dot"></span>
+                  <span id="draw-status-text">준비 완료 (스페이스바 또는 버튼 클릭)</span>
+                </div>
+              </div>
+
+              <div class="main-draw-btn-wrap">
+                <button id="btn-reroll" class="btn-secondary-action" style="display:none;" title="부재자 발생 시 현재 결과 취소 후 재추첨">
+                  <span>↩️</span> 부재자 재추첨
+                </button>
+                <button id="btn-next-draw" class="btn-secondary-action" style="display:none;" title="무대 정리 및 다음 추첨 준비">
+                  <span>✨</span> 다음 추첨 준비
+                </button>
+                <button id="btn-grand-draw" class="btn-grand-draw">
+                  <span>🎲</span> 추첨 시작
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- =================================================================
+           VIEW 2: 전체 당첨 현황판 (RESULTS DASHBOARD)
+           ================================================================= -->
+      <section id="view-results" class="tab-view">
+        <div class="results-dashboard-layout">
+          
+          <!-- Summary Stat Cards -->
+          <div class="results-stats-row">
+            <div class="stat-box">
+              <div class="icon">👥</div>
+              <div>
+                <div class="title">전체 참가자</div>
+                <div class="number" id="dash-total-participants">70</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="icon">🎉</div>
+              <div>
+                <div class="title">총 당첨 완료 인원</div>
+                <div class="number" id="dash-total-winners" style="color:var(--gold-bright)">0</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="icon">🎟️</div>
+              <div>
+                <div class="title">현재 남은 인원</div>
+                <div class="number" id="dash-remaining-participants" style="color:var(--text-main)">70</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="icon">🎁</div>
+              <div>
+                <div class="title">등록된 경품 수</div>
+                <div class="number" id="dash-prize-count">5</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Participant Number Search Bar -->
+          <div class="search-check-bar">
+            <div class="search-input-wrap">
+              <span style="color:var(--gold-bright); font-size:1.2rem;">🔍</span>
+              <input type="number" id="input-search-number" placeholder="참가 번호 입력 (예: 25)" min="1" />
+            </div>
+            <div id="search-result-hint" class="search-result-hint">
+              번호를 입력하면 실시간으로 당첨 여부와 해당 경품을 즉시 확인합니다.
+            </div>
+          </div>
+
+          <!-- Grouped Results Lists -->
+          <div id="results-groups-container" class="results-groups-container">
+            <!-- Dynamically populated -->
+          </div>
+
+        </div>
+      </section>
+
+      <!-- =================================================================
+           VIEW 3: 경품 목록 관리 (PRIZE MANAGER)
+           ================================================================= -->
+      <section id="view-prizes" class="tab-view">
+        <div class="panel-card" style="max-width: 900px; margin: 0 auto; width: 100%;">
+          <div class="panel-title">
+            <span>🎁 행사 경품 목록 설정</span>
+            <button id="btn-add-new-prize" class="btn-sm-gold" style="width:auto; padding: 6px 16px;">+ 새 경품 추가</button>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">
+            경품 이름과 당첨 목표 인원을 행사 계획에 맞게 직접 편집할 수 있습니다. 변경사항은 즉시 반영됩니다.
+          </p>
+
+          <table class="prize-manager-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">순서</th>
+                <th>경품명</th>
+                <th style="width: 120px;">목표 인원</th>
+                <th style="width: 100px;">당첨 인원</th>
+                <th style="width: 80px;">관리</th>
+              </tr>
+            </thead>
+            <tbody id="prize-manager-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- ===================================================================
+       MODAL 1: 사운드 상세 설정
+       =================================================================== -->
+  <div id="modal-sound" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">🔊 음향 및 효과음 설정</div>
+        <button id="btn-close-sound-modal" class="modal-close">&times;</button>
+      </div>
+
+      <!-- Master Mute -->
+      <div class="sound-setting-row" style="background:rgba(212,175,55,0.1); padding:10px 14px; border-radius:12px; margin-bottom:20px;">
+        <div class="sound-setting-info">
+          <div class="sound-setting-name">전체 사운드 출력 (Master)</div>
+          <div class="sound-setting-desc">모든 배경음악 및 효과음 통합 제어</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="switch-master-mute" checked />
+          <span class="slider-round"></span>
+        </label>
+      </div>
+
+      <!-- BGM -->
+      <div class="sound-setting-row">
+        <div class="sound-setting-info">
+          <div class="sound-setting-name">배경음악 (BGM)</div>
+          <div class="sound-setting-desc">행사장 앰비언트 골드 라운지 배경음</div>
+        </div>
+        <div class="sound-slider-wrap">
+          <input type="range" id="slider-bgm" class="gold-slider" min="0" max="1" step="0.05" value="0.4" />
+          <label class="switch">
+            <input type="checkbox" id="switch-bgm" checked />
+            <span class="slider-round"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Draw Tension SFX -->
+      <div class="sound-setting-row">
+        <div class="sound-setting-info">
+          <div class="sound-setting-name">추첨 진행 효과음 (Draw Tension)</div>
+          <div class="sound-setting-desc">슬롯 회전 / 경마 레이스 질주 사운드</div>
+        </div>
+        <div class="sound-slider-wrap">
+          <input type="range" id="slider-draw-sfx" class="gold-slider" min="0" max="1" step="0.05" value="0.7" />
+          <label class="switch">
+            <input type="checkbox" id="switch-draw-sfx" checked />
+            <span class="slider-round"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Win Fanfare SFX -->
+      <div class="sound-setting-row">
+        <div class="sound-setting-info">
+          <div class="sound-setting-name">당첨 발표 축하 효과음 (Fanfare)</div>
+          <div class="sound-setting-desc">골드 팡파르 및 축하 차임 사운드</div>
+        </div>
+        <div class="sound-slider-wrap">
+          <input type="range" id="slider-win-sfx" class="gold-slider" min="0" max="1" step="0.05" value="0.8" />
+          <label class="switch">
+            <input type="checkbox" id="switch-win-sfx" checked />
+            <span class="slider-round"></span>
+          </label>
+        </div>
+      </div>
+
+      <div style="font-size:0.8rem; color:var(--text-muted); margin-top:14px; text-align:center;">
+        * 외부 음원 파일 의존 없이 웹 표준 Web Audio API로 100% 오프라인 작동합니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL 2: 전체 초기화 확인
+       =================================================================== -->
+  <div id="modal-reset" class="modal-backdrop">
+    <div class="modal-box" style="max-width: 440px; text-align:center;">
+      <div style="font-size: 3rem; margin-bottom: 10px;">⚠️</div>
+      <div class="modal-title" style="color:var(--color-danger); margin-bottom: 12px;">추첨 결과를 초기화하시겠습니까?</div>
+      <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 24px;">
+        현재까지의 모든 당첨 기록과 진행 상태가 삭제되며 참가 번호 풀이 다시 생성됩니다.<br/>
+        <strong style="color:#fff;">이 작업은 되돌릴 수 없습니다.</strong>
+      </p>
+      <div class="modal-actions" style="justify-content:center;">
+        <button id="btn-cancel-reset" class="btn-icon-gold" style="padding:10px 22px;">취소</button>
+        <button id="btn-confirm-reset" class="btn-grand-draw" style="padding:10px 28px; font-size:1rem; background: linear-gradient(135deg, #e63946, #b01b27); color:#fff; box-shadow: 0 4px 15px rgba(230,57,70,0.5);">
+          전체 초기화 실행
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="audio.js"></script>
+  <script src="animations.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
